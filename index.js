@@ -1,5 +1,4 @@
-import { getInput, setOutput, setFailed } from "@actions/core";
-import { context } from "@actions/github";
+import { getInput, setOutput, setFailed, summary } from "@actions/core";
 import { format } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
 
@@ -13,9 +12,17 @@ function currentTimestamp(timeZone) {
 
 try {
   const timezone = getInput("timezone");
-  console.log(`Timezone: ${timezone}`);
+  const buildNumber = currentTimestamp(timezone);
 
-  setOutput("build-number", currentTimestamp(timezone));
+  setOutput("build-number", buildNumber);
+
+  summary.addHeading("Summary").addTable({
+    title: "Generation Summary",
+    rows: [
+      ["Timezone", timezone],
+      ["Build Number", buildNumber],
+    ],
+  });
 } catch (error) {
   setFailed(error.message);
 }

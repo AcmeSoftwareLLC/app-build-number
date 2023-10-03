@@ -1,5 +1,7 @@
 # App Version Number
 
+This action generates a version number for your app. It uses the current date and time to generate the version number.
+
 ## Usage
 
 ```yaml

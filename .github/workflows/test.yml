@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Generate
         id: generate
-        uses: AcmeSoftwareLLC/app-build-number@main
+        uses: ./
         with:
           timezone: ${{ github.event.inputs.timezone }}
 

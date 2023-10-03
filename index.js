@@ -5,14 +5,14 @@ import { utcToZonedTime } from "date-fns-tz";
 function currentTimestamp(timeZone) {
   const now = utcToZonedTime(new Date(), timeZone);
 
-  return format(now, "yyMMddHHm", {
+  return format(now, "yyMMddHHmm", {
     timeZone: timeZone,
   });
 }
 
 try {
   const timezone = getInput("timezone");
-  const buildNumber = currentTimestamp(timezone);
+  const buildNumber = currentTimestamp(timezone).slice(0, -1);
 
   setOutput("build-number", buildNumber);
 

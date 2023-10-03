@@ -25342,13 +25342,16 @@ try {
 
   (0,core.setOutput)("build-number", buildNumber);
 
-  core.summary.addHeading("Summary").addTable({
-    title: "Generation Summary",
-    rows: [
+  core.summary.addHeading("Summary")
+    .addTable([
+      [
+        { data: "Description", header: true },
+        { data: "Result", header: true },
+      ],
       ["Timezone", timezone],
       ["Build Number", buildNumber],
-    ],
-  });
+    ])
+    .write();
 } catch (error) {
   (0,core.setFailed)(error.message);
 }

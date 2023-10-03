@@ -16,13 +16,17 @@ try {
 
   setOutput("build-number", buildNumber);
 
-  summary.addHeading("Summary").addTable({
-    title: "Generation Summary",
-    rows: [
+  summary
+    .addHeading("Summary")
+    .addTable([
+      [
+        { data: "Description", header: true },
+        { data: "Result", header: true },
+      ],
       ["Timezone", timezone],
       ["Build Number", buildNumber],
-    ],
-  });
+    ])
+    .write();
 } catch (error) {
   setFailed(error.message);
 }

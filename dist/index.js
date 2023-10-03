@@ -24083,14 +24083,6 @@ exports["default"] = _default;
 
 /***/ }),
 
-/***/ 4619:
-/***/ ((module) => {
-
-module.exports = eval("require")("date-fns-tz");
-
-
-/***/ }),
-
 /***/ 9491:
 /***/ ((module) => {
 
@@ -24540,35 +24532,6 @@ module.exports = _unsupportedIterableToArray, module.exports.__esModule = true, 
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat get default export */
-/******/ 	(() => {
-/******/ 		// getDefaultExport function for compatibility with non-harmony modules
-/******/ 		__nccwpck_require__.n = (module) => {
-/******/ 			var getter = module && module.__esModule ?
-/******/ 				() => (module['default']) :
-/******/ 				() => (module);
-/******/ 			__nccwpck_require__.d(getter, { a: getter });
-/******/ 			return getter;
-/******/ 		};
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/define property getters */
-/******/ 	(() => {
-/******/ 		// define getter functions for harmony exports
-/******/ 		__nccwpck_require__.d = (exports, definition) => {
-/******/ 			for(var key in definition) {
-/******/ 				if(__nccwpck_require__.o(definition, key) && !__nccwpck_require__.o(exports, key)) {
-/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
-/******/ 				}
-/******/ 			}
-/******/ 		};
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
-/******/ 	(() => {
-/******/ 		__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
-/******/ 	})();
-/******/ 	
 /******/ 	/* webpack/runtime/make namespace object */
 /******/ 	(() => {
 /******/ 		// define __esModule on exports
@@ -24589,32 +24552,797 @@ var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be in strict mode.
 (() => {
 "use strict";
+// ESM COMPAT FLAG
 __nccwpck_require__.r(__webpack_exports__);
-/* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(9935);
-/* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var date_fns__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(8075);
-/* harmony import */ var date_fns__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__nccwpck_require__.n(date_fns__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var date_fns_tz__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(4619);
-/* harmony import */ var date_fns_tz__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(date_fns_tz__WEBPACK_IMPORTED_MODULE_1__);
+
+// EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
+var core = __nccwpck_require__(9935);
+// EXTERNAL MODULE: ./node_modules/date-fns/index.js
+var date_fns = __nccwpck_require__(8075);
+;// CONCATENATED MODULE: ./node_modules/date-fns-tz/esm/_lib/tzTokenizeDate/index.js
+/**
+ * Returns the [year, month, day, hour, minute, seconds] tokens of the provided
+ * `date` as it will be rendered in the `timeZone`.
+ */
+function tzTokenizeDate(date, timeZone) {
+  var dtf = getDateTimeFormat(timeZone)
+  return dtf.formatToParts ? partsOffset(dtf, date) : hackyOffset(dtf, date)
+}
+
+var typeToPos = {
+  year: 0,
+  month: 1,
+  day: 2,
+  hour: 3,
+  minute: 4,
+  second: 5,
+}
+
+function partsOffset(dtf, date) {
+  try {
+    var formatted = dtf.formatToParts(date)
+    var filled = []
+    for (var i = 0; i < formatted.length; i++) {
+      var pos = typeToPos[formatted[i].type]
+
+      if (pos >= 0) {
+        filled[pos] = parseInt(formatted[i].value, 10)
+      }
+    }
+    return filled
+  } catch (error) {
+    if (error instanceof RangeError) {
+      return [NaN]
+    }
+    throw error
+  }
+}
+
+function hackyOffset(dtf, date) {
+  var formatted = dtf.format(date).replace(/\u200E/g, '')
+  var parsed = /(\d+)\/(\d+)\/(\d+),? (\d+):(\d+):(\d+)/.exec(formatted)
+  // var [, fMonth, fDay, fYear, fHour, fMinute, fSecond] = parsed
+  // return [fYear, fMonth, fDay, fHour, fMinute, fSecond]
+  return [parsed[3], parsed[1], parsed[2], parsed[4], parsed[5], parsed[6]]
+}
+
+// Get a cached Intl.DateTimeFormat instance for the IANA `timeZone`. This can be used
+// to get deterministic local date/time output according to the `en-US` locale which
+// can be used to extract local time parts as necessary.
+var dtfCache = {}
+function getDateTimeFormat(timeZone) {
+  if (!dtfCache[timeZone]) {
+    // New browsers use `hourCycle`, IE and Chrome <73 does not support it and uses `hour12`
+    var testDateFormatted = new Intl.DateTimeFormat('en-US', {
+      hour12: false,
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: 'numeric',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).format(new Date('2014-06-25T04:00:00.123Z'))
+    var hourCycleSupported =
+      testDateFormatted === '06/25/2014, 00:00:00' ||
+      testDateFormatted === '‎06‎/‎25‎/‎2014‎ ‎00‎:‎00‎:‎00'
+
+    dtfCache[timeZone] = hourCycleSupported
+      ? new Intl.DateTimeFormat('en-US', {
+          hour12: false,
+          timeZone: timeZone,
+          year: 'numeric',
+          month: 'numeric',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        })
+      : new Intl.DateTimeFormat('en-US', {
+          hourCycle: 'h23',
+          timeZone: timeZone,
+          year: 'numeric',
+          month: 'numeric',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        })
+  }
+  return dtfCache[timeZone]
+}
+
+;// CONCATENATED MODULE: ./node_modules/date-fns-tz/esm/_lib/newDateUTC/index.js
+/**
+ * Use instead of `new Date(Date.UTC(...))` to support years below 100 which doesn't work
+ * otherwise due to the nature of the
+ * [`Date` constructor](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#interpretation_of_two-digit_years.
+ *
+ * For `Date.UTC(...)`, use `newDateUTC(...).getTime()`.
+ */
+function newDateUTC(fullYear, month, day, hour, minute, second, millisecond) {
+  var utcDate = new Date(0)
+  utcDate.setUTCFullYear(fullYear, month, day)
+  utcDate.setUTCHours(hour, minute, second, millisecond)
+  return utcDate
+}
+
+;// CONCATENATED MODULE: ./node_modules/date-fns-tz/esm/_lib/tzParseTimezone/index.js
+
+
+
+var MILLISECONDS_IN_HOUR = 3600000
+var MILLISECONDS_IN_MINUTE = 60000
+
+var patterns = {
+  timezone: /([Z+-].*)$/,
+  timezoneZ: /^(Z)$/,
+  timezoneHH: /^([+-]\d{2})$/,
+  timezoneHHMM: /^([+-]\d{2}):?(\d{2})$/,
+}
+
+// Parse various time zone offset formats to an offset in milliseconds
+function tzParseTimezone(timezoneString, date, isUtcDate) {
+  var token
+  var absoluteOffset
+
+  // Empty string
+  if (!timezoneString) {
+    return 0
+  }
+
+  // Z
+  token = patterns.timezoneZ.exec(timezoneString)
+  if (token) {
+    return 0
+  }
+
+  var hours
+
+  // ±hh
+  token = patterns.timezoneHH.exec(timezoneString)
+  if (token) {
+    hours = parseInt(token[1], 10)
+
+    if (!validateTimezone(hours)) {
+      return NaN
+    }
+
+    return -(hours * MILLISECONDS_IN_HOUR)
+  }
+
+  // ±hh:mm or ±hhmm
+  token = patterns.timezoneHHMM.exec(timezoneString)
+  if (token) {
+    hours = parseInt(token[1], 10)
+    var minutes = parseInt(token[2], 10)
+
+    if (!validateTimezone(hours, minutes)) {
+      return NaN
+    }
+
+    absoluteOffset = Math.abs(hours) * MILLISECONDS_IN_HOUR + minutes * MILLISECONDS_IN_MINUTE
+    return hours > 0 ? -absoluteOffset : absoluteOffset
+  }
+
+  // IANA time zone
+  if (isValidTimezoneIANAString(timezoneString)) {
+    date = new Date(date || Date.now())
+    var utcDate = isUtcDate ? date : toUtcDate(date)
+
+    var offset = calcOffset(utcDate, timezoneString)
+
+    var fixedOffset = isUtcDate ? offset : fixOffset(date, offset, timezoneString)
+
+    return -fixedOffset
+  }
+
+  return NaN
+}
+
+function toUtcDate(date) {
+  return newDateUTC(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    date.getHours(),
+    date.getMinutes(),
+    date.getSeconds(),
+    date.getMilliseconds()
+  )
+}
+
+function calcOffset(date, timezoneString) {
+  var tokens = tzTokenizeDate(date, timezoneString)
+
+  // ms dropped because it's not provided by tzTokenizeDate
+  var asUTC = newDateUTC(
+    tokens[0],
+    tokens[1] - 1,
+    tokens[2],
+    tokens[3] % 24,
+    tokens[4],
+    tokens[5],
+    0
+  ).getTime()
+
+  var asTS = date.getTime()
+  var over = asTS % 1000
+  asTS -= over >= 0 ? over : 1000 + over
+  return asUTC - asTS
+}
+
+function fixOffset(date, offset, timezoneString) {
+  var localTS = date.getTime()
+
+  // Our UTC time is just a guess because our offset is just a guess
+  var utcGuess = localTS - offset
+
+  // Test whether the zone matches the offset for this ts
+  var o2 = calcOffset(new Date(utcGuess), timezoneString)
+
+  // If so, offset didn't change, and we're done
+  if (offset === o2) {
+    return offset
+  }
+
+  // If not, change the ts by the difference in the offset
+  utcGuess -= o2 - offset
+
+  // If that gives us the local time we want, we're done
+  var o3 = calcOffset(new Date(utcGuess), timezoneString)
+  if (o2 === o3) {
+    return o2
+  }
+
+  // If it's different, we're in a hole time. The offset has changed, but we don't adjust the time
+  return Math.max(o2, o3)
+}
+
+function validateTimezone(hours, minutes) {
+  return -23 <= hours && hours <= 23 && (minutes == null || (0 <= minutes && minutes <= 59))
+}
+
+var validIANATimezoneCache = {}
+function isValidTimezoneIANAString(timeZoneString) {
+  if (validIANATimezoneCache[timeZoneString]) return true
+  try {
+    new Intl.DateTimeFormat(undefined, { timeZone: timeZoneString })
+    validIANATimezoneCache[timeZoneString] = true
+    return true
+  } catch (error) {
+    return false
+  }
+}
+
+// EXTERNAL MODULE: ./node_modules/date-fns/_lib/toInteger/index.js
+var toInteger = __nccwpck_require__(6915);
+// EXTERNAL MODULE: ./node_modules/date-fns/_lib/getTimezoneOffsetInMilliseconds/index.js
+var getTimezoneOffsetInMilliseconds = __nccwpck_require__(5618);
+;// CONCATENATED MODULE: ./node_modules/date-fns-tz/esm/_lib/tzPattern/index.js
+/** Regex to identify the presence of a time zone specifier in a date string */
+var tzPattern = /(Z|[+-]\d{2}(?::?\d{2})?| UTC| [a-zA-Z]+\/[a-zA-Z_]+(?:\/[a-zA-Z_]+)?)$/
+
+/* harmony default export */ const _lib_tzPattern = (tzPattern);
+
+;// CONCATENATED MODULE: ./node_modules/date-fns-tz/esm/toDate/index.js
+
+
+
+
+
+var toDate_MILLISECONDS_IN_HOUR = 3600000
+var toDate_MILLISECONDS_IN_MINUTE = 60000
+var DEFAULT_ADDITIONAL_DIGITS = 2
+
+var toDate_patterns = {
+  dateTimePattern: /^([0-9W+-]+)(T| )(.*)/,
+  datePattern: /^([0-9W+-]+)(.*)/,
+  plainTime: /:/,
+
+  // year tokens
+  YY: /^(\d{2})$/,
+  YYY: [
+    /^([+-]\d{2})$/, // 0 additional digits
+    /^([+-]\d{3})$/, // 1 additional digit
+    /^([+-]\d{4})$/, // 2 additional digits
+  ],
+  YYYY: /^(\d{4})/,
+  YYYYY: [
+    /^([+-]\d{4})/, // 0 additional digits
+    /^([+-]\d{5})/, // 1 additional digit
+    /^([+-]\d{6})/, // 2 additional digits
+  ],
+
+  // date tokens
+  MM: /^-(\d{2})$/,
+  DDD: /^-?(\d{3})$/,
+  MMDD: /^-?(\d{2})-?(\d{2})$/,
+  Www: /^-?W(\d{2})$/,
+  WwwD: /^-?W(\d{2})-?(\d{1})$/,
+
+  HH: /^(\d{2}([.,]\d*)?)$/,
+  HHMM: /^(\d{2}):?(\d{2}([.,]\d*)?)$/,
+  HHMMSS: /^(\d{2}):?(\d{2}):?(\d{2}([.,]\d*)?)$/,
+
+  // time zone tokens (to identify the presence of a tz)
+  timeZone: _lib_tzPattern,
+}
+
+/**
+ * @name toDate
+ * @category Common Helpers
+ * @summary Convert the given argument to an instance of Date.
+ *
+ * @description
+ * Convert the given argument to an instance of Date.
+ *
+ * If the argument is an instance of Date, the function returns its clone.
+ *
+ * If the argument is a number, it is treated as a timestamp.
+ *
+ * If an argument is a string, the function tries to parse it.
+ * Function accepts complete ISO 8601 formats as well as partial implementations.
+ * ISO 8601: http://en.wikipedia.org/wiki/ISO_8601
+ * If the function cannot parse the string or the values are invalid, it returns Invalid Date.
+ *
+ * If the argument is none of the above, the function returns Invalid Date.
+ *
+ * **Note**: *all* Date arguments passed to any *date-fns* function is processed by `toDate`.
+ * All *date-fns* functions will throw `RangeError` if `options.additionalDigits` is not 0, 1, 2 or undefined.
+ *
+ * @param {Date|String|Number} argument - the value to convert
+ * @param {OptionsWithTZ} [options] - the object with options. See [Options]{@link https://date-fns.org/docs/Options}
+ * @param {0|1|2} [options.additionalDigits=2] - the additional number of digits in the extended year format
+ * @param {String} [options.timeZone=''] - used to specify the IANA time zone offset of a date String.
+ * @returns {Date} the parsed date in the local time zone
+ * @throws {TypeError} 1 argument required
+ * @throws {RangeError} `options.additionalDigits` must be 0, 1 or 2
+ *
+ * @example
+ * // Convert string '2014-02-11T11:30:30' to date:
+ * var result = toDate('2014-02-11T11:30:30')
+ * //=> Tue Feb 11 2014 11:30:30
+ *
+ * @example
+ * // Convert string '+02014101' to date,
+ * // if the additional number of digits in the extended year format is 1:
+ * var result = toDate('+02014101', {additionalDigits: 1})
+ * //=> Fri Apr 11 2014 00:00:00
+ */
+function toDate(argument, dirtyOptions) {
+  if (arguments.length < 1) {
+    throw new TypeError('1 argument required, but only ' + arguments.length + ' present')
+  }
+
+  if (argument === null) {
+    return new Date(NaN)
+  }
+
+  var options = dirtyOptions || {}
+
+  var additionalDigits =
+    options.additionalDigits == null
+      ? DEFAULT_ADDITIONAL_DIGITS
+      : toInteger(options.additionalDigits)
+  if (additionalDigits !== 2 && additionalDigits !== 1 && additionalDigits !== 0) {
+    throw new RangeError('additionalDigits must be 0, 1 or 2')
+  }
+
+  // Clone the date
+  if (
+    argument instanceof Date ||
+    (typeof argument === 'object' && Object.prototype.toString.call(argument) === '[object Date]')
+  ) {
+    // Prevent the date to lose the milliseconds when passed to new Date() in IE10
+    return new Date(argument.getTime())
+  } else if (
+    typeof argument === 'number' ||
+    Object.prototype.toString.call(argument) === '[object Number]'
+  ) {
+    return new Date(argument)
+  } else if (
+    !(
+      typeof argument === 'string' || Object.prototype.toString.call(argument) === '[object String]'
+    )
+  ) {
+    return new Date(NaN)
+  }
+
+  var dateStrings = splitDateString(argument)
+
+  var parseYearResult = parseYear(dateStrings.date, additionalDigits)
+  var year = parseYearResult.year
+  var restDateString = parseYearResult.restDateString
+
+  var date = parseDate(restDateString, year)
+
+  if (isNaN(date)) {
+    return new Date(NaN)
+  }
+
+  if (date) {
+    var timestamp = date.getTime()
+    var time = 0
+    var offset
+
+    if (dateStrings.time) {
+      time = parseTime(dateStrings.time)
+
+      if (isNaN(time)) {
+        return new Date(NaN)
+      }
+    }
+
+    if (dateStrings.timeZone || options.timeZone) {
+      offset = tzParseTimezone(dateStrings.timeZone || options.timeZone, new Date(timestamp + time))
+      if (isNaN(offset)) {
+        return new Date(NaN)
+      }
+    } else {
+      // get offset accurate to hour in time zones that change offset
+      offset = getTimezoneOffsetInMilliseconds(new Date(timestamp + time))
+      offset = getTimezoneOffsetInMilliseconds(new Date(timestamp + time + offset))
+    }
+
+    return new Date(timestamp + time + offset)
+  } else {
+    return new Date(NaN)
+  }
+}
+
+function splitDateString(dateString) {
+  var dateStrings = {}
+  var parts = toDate_patterns.dateTimePattern.exec(dateString)
+  var timeString
+
+  if (!parts) {
+    parts = toDate_patterns.datePattern.exec(dateString)
+    if (parts) {
+      dateStrings.date = parts[1]
+      timeString = parts[2]
+    } else {
+      dateStrings.date = null
+      timeString = dateString
+    }
+  } else {
+    dateStrings.date = parts[1]
+    timeString = parts[3]
+  }
+
+  if (timeString) {
+    var token = toDate_patterns.timeZone.exec(timeString)
+    if (token) {
+      dateStrings.time = timeString.replace(token[1], '')
+      dateStrings.timeZone = token[1].trim()
+    } else {
+      dateStrings.time = timeString
+    }
+  }
+
+  return dateStrings
+}
+
+function parseYear(dateString, additionalDigits) {
+  var patternYYY = toDate_patterns.YYY[additionalDigits]
+  var patternYYYYY = toDate_patterns.YYYYY[additionalDigits]
+
+  var token
+
+  // YYYY or ±YYYYY
+  token = toDate_patterns.YYYY.exec(dateString) || patternYYYYY.exec(dateString)
+  if (token) {
+    var yearString = token[1]
+    return {
+      year: parseInt(yearString, 10),
+      restDateString: dateString.slice(yearString.length),
+    }
+  }
+
+  // YY or ±YYY
+  token = toDate_patterns.YY.exec(dateString) || patternYYY.exec(dateString)
+  if (token) {
+    var centuryString = token[1]
+    return {
+      year: parseInt(centuryString, 10) * 100,
+      restDateString: dateString.slice(centuryString.length),
+    }
+  }
+
+  // Invalid ISO-formatted year
+  return {
+    year: null,
+  }
+}
+
+function parseDate(dateString, year) {
+  // Invalid ISO-formatted year
+  if (year === null) {
+    return null
+  }
+
+  var token
+  var date
+  var month
+  var week
+
+  // YYYY
+  if (dateString.length === 0) {
+    date = new Date(0)
+    date.setUTCFullYear(year)
+    return date
+  }
+
+  // YYYY-MM
+  token = toDate_patterns.MM.exec(dateString)
+  if (token) {
+    date = new Date(0)
+    month = parseInt(token[1], 10) - 1
+
+    if (!validateDate(year, month)) {
+      return new Date(NaN)
+    }
+
+    date.setUTCFullYear(year, month)
+    return date
+  }
+
+  // YYYY-DDD or YYYYDDD
+  token = toDate_patterns.DDD.exec(dateString)
+  if (token) {
+    date = new Date(0)
+    var dayOfYear = parseInt(token[1], 10)
+
+    if (!validateDayOfYearDate(year, dayOfYear)) {
+      return new Date(NaN)
+    }
+
+    date.setUTCFullYear(year, 0, dayOfYear)
+    return date
+  }
+
+  // yyyy-MM-dd or YYYYMMDD
+  token = toDate_patterns.MMDD.exec(dateString)
+  if (token) {
+    date = new Date(0)
+    month = parseInt(token[1], 10) - 1
+    var day = parseInt(token[2], 10)
+
+    if (!validateDate(year, month, day)) {
+      return new Date(NaN)
+    }
+
+    date.setUTCFullYear(year, month, day)
+    return date
+  }
+
+  // YYYY-Www or YYYYWww
+  token = toDate_patterns.Www.exec(dateString)
+  if (token) {
+    week = parseInt(token[1], 10) - 1
+
+    if (!validateWeekDate(year, week)) {
+      return new Date(NaN)
+    }
+
+    return dayOfISOWeekYear(year, week)
+  }
+
+  // YYYY-Www-D or YYYYWwwD
+  token = toDate_patterns.WwwD.exec(dateString)
+  if (token) {
+    week = parseInt(token[1], 10) - 1
+    var dayOfWeek = parseInt(token[2], 10) - 1
+
+    if (!validateWeekDate(year, week, dayOfWeek)) {
+      return new Date(NaN)
+    }
+
+    return dayOfISOWeekYear(year, week, dayOfWeek)
+  }
+
+  // Invalid ISO-formatted date
+  return null
+}
+
+function parseTime(timeString) {
+  var token
+  var hours
+  var minutes
+
+  // hh
+  token = toDate_patterns.HH.exec(timeString)
+  if (token) {
+    hours = parseFloat(token[1].replace(',', '.'))
+
+    if (!validateTime(hours)) {
+      return NaN
+    }
+
+    return (hours % 24) * toDate_MILLISECONDS_IN_HOUR
+  }
+
+  // hh:mm or hhmm
+  token = toDate_patterns.HHMM.exec(timeString)
+  if (token) {
+    hours = parseInt(token[1], 10)
+    minutes = parseFloat(token[2].replace(',', '.'))
+
+    if (!validateTime(hours, minutes)) {
+      return NaN
+    }
+
+    return (hours % 24) * toDate_MILLISECONDS_IN_HOUR + minutes * toDate_MILLISECONDS_IN_MINUTE
+  }
+
+  // hh:mm:ss or hhmmss
+  token = toDate_patterns.HHMMSS.exec(timeString)
+  if (token) {
+    hours = parseInt(token[1], 10)
+    minutes = parseInt(token[2], 10)
+    var seconds = parseFloat(token[3].replace(',', '.'))
+
+    if (!validateTime(hours, minutes, seconds)) {
+      return NaN
+    }
+
+    return (hours % 24) * toDate_MILLISECONDS_IN_HOUR + minutes * toDate_MILLISECONDS_IN_MINUTE + seconds * 1000
+  }
+
+  // Invalid ISO-formatted time
+  return null
+}
+
+function dayOfISOWeekYear(isoWeekYear, week, day) {
+  week = week || 0
+  day = day || 0
+  var date = new Date(0)
+  date.setUTCFullYear(isoWeekYear, 0, 4)
+  var fourthOfJanuaryDay = date.getUTCDay() || 7
+  var diff = week * 7 + day + 1 - fourthOfJanuaryDay
+  date.setUTCDate(date.getUTCDate() + diff)
+  return date
+}
+
+// Validation functions
+
+var DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+var DAYS_IN_MONTH_LEAP_YEAR = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
+function isLeapYearIndex(year) {
+  return year % 400 === 0 || (year % 4 === 0 && year % 100 !== 0)
+}
+
+function validateDate(year, month, date) {
+  if (month < 0 || month > 11) {
+    return false
+  }
+
+  if (date != null) {
+    if (date < 1) {
+      return false
+    }
+
+    var isLeapYear = isLeapYearIndex(year)
+    if (isLeapYear && date > DAYS_IN_MONTH_LEAP_YEAR[month]) {
+      return false
+    }
+    if (!isLeapYear && date > DAYS_IN_MONTH[month]) {
+      return false
+    }
+  }
+
+  return true
+}
+
+function validateDayOfYearDate(year, dayOfYear) {
+  if (dayOfYear < 1) {
+    return false
+  }
+
+  var isLeapYear = isLeapYearIndex(year)
+  if (isLeapYear && dayOfYear > 366) {
+    return false
+  }
+  if (!isLeapYear && dayOfYear > 365) {
+    return false
+  }
+
+  return true
+}
+
+function validateWeekDate(year, week, day) {
+  if (week < 0 || week > 52) {
+    return false
+  }
+
+  if (day != null && (day < 0 || day > 6)) {
+    return false
+  }
+
+  return true
+}
+
+function validateTime(hours, minutes, seconds) {
+  if (hours != null && (hours < 0 || hours >= 25)) {
+    return false
+  }
+
+  if (minutes != null && (minutes < 0 || minutes >= 60)) {
+    return false
+  }
+
+  if (seconds != null && (seconds < 0 || seconds >= 60)) {
+    return false
+  }
+
+  return true
+}
+
+;// CONCATENATED MODULE: ./node_modules/date-fns-tz/esm/utcToZonedTime/index.js
+
+
+
+/**
+ * @name utcToZonedTime
+ * @category Time Zone Helpers
+ * @summary Get a date/time representing local time in a given time zone from the UTC date
+ *
+ * @description
+ * Returns a date instance with values representing the local time in the time zone
+ * specified of the UTC time from the date provided. In other words, when the new date
+ * is formatted it will show the equivalent hours in the target time zone regardless
+ * of the current system time zone.
+ *
+ * @param {Date|String|Number} date - the date with the relevant UTC time
+ * @param {String} timeZone - the time zone to get local time for, can be an offset or IANA time zone
+ * @param {OptionsWithTZ} [options] - the object with options. See [Options]{@link https://date-fns.org/docs/Options}
+ * @param {0|1|2} [options.additionalDigits=2] - passed to `toDate`. See [toDate]{@link https://date-fns.org/docs/toDate}
+ * @returns {Date} the new date with the equivalent time in the time zone
+ * @throws {TypeError} 2 arguments required
+ * @throws {RangeError} `options.additionalDigits` must be 0, 1 or 2
+ *
+ * @example
+ * // In June 10am UTC is 6am in New York (-04:00)
+ * const result = utcToZonedTime('2014-06-25T10:00:00.000Z', 'America/New_York')
+ * //=> Jun 25 2014 06:00:00
+ */
+function utcToZonedTime(dirtyDate, timeZone, options) {
+  var date = toDate(dirtyDate, options)
+
+  var offsetMilliseconds = tzParseTimezone(timeZone, date, true)
+
+  var d = new Date(date.getTime() - offsetMilliseconds)
+
+  var resultDate = new Date(0)
+
+  resultDate.setFullYear(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
+
+  resultDate.setHours(d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds(), d.getUTCMilliseconds())
+
+  return resultDate
+}
+
+;// CONCATENATED MODULE: ./index.js
 
 
 
 
 function currentTimestamp(timeZone) {
-  const now = (0,date_fns_tz__WEBPACK_IMPORTED_MODULE_1__.utcToZonedTime)(new Date(), timeZone);
+  const now = utcToZonedTime(new Date(), timeZone);
 
-  return (0,date_fns__WEBPACK_IMPORTED_MODULE_2__.format)(now, "yyMMddHHm", {
+  return (0,date_fns.format)(now, "yyMMddHHm", {
     timeZone: timeZone,
   });
 }
 
 try {
-  const timezone = (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)("timezone");
+  const timezone = (0,core.getInput)("timezone");
   const buildNumber = currentTimestamp(timezone);
 
-  (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput)("build-number", buildNumber);
+  (0,core.setOutput)("build-number", buildNumber);
 
-  _actions_core__WEBPACK_IMPORTED_MODULE_0__.summary.addHeading("Summary").addTable({
+  core.summary.addHeading("Summary").addTable({
     title: "Generation Summary",
     rows: [
       ["Timezone", timezone],
@@ -24622,7 +25350,7 @@ try {
     ],
   });
 } catch (error) {
-  (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed)(error.message);
+  (0,core.setFailed)(error.message);
 }
 
 })();

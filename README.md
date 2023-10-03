@@ -8,7 +8,7 @@ This action generates a version number for your app. It uses the current date an
 steps:
   - name: Generate
     id: generate
-    uses: AcmeSoftwareLLC/app-version-number@v1
+    uses: AcmeSoftwareLLC/app-build-number@v1
     with:
       timezone: Asia/Kathmandu
 

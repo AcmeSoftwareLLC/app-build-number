@@ -25331,14 +25331,14 @@ function utcToZonedTime(dirtyDate, timeZone, options) {
 function currentTimestamp(timeZone) {
   const now = utcToZonedTime(new Date(), timeZone);
 
-  return (0,date_fns.format)(now, "yyMMddHHm", {
+  return (0,date_fns.format)(now, "yyMMddHHmm", {
     timeZone: timeZone,
   });
 }
 
 try {
   const timezone = (0,core.getInput)("timezone");
-  const buildNumber = currentTimestamp(timezone);
+  const buildNumber = currentTimestamp(timezone).slice(0, -1);
 
   (0,core.setOutput)("build-number", buildNumber);
 

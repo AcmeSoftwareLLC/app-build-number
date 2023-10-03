@@ -1,0 +1,13 @@
+name: App Build Number
+description: Generate a build number for an app based on current time
+inputs:
+  timezone:
+    description: Time Zone
+    required: true
+    default: Asia/Kathmandu
+outputs:
+  build-number:
+    description: The generated build number
+runs:
+  using: node20
+  main: dist/index.js

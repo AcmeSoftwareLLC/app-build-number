@@ -30992,6 +30992,14 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 4619:
+/***/ ((module) => {
+
+module.exports = eval("require")("date-fns-tz");
+
+
+/***/ }),
+
 /***/ 5924:
 /***/ ((module) => {
 
@@ -31543,16 +31551,19 @@ __nccwpck_require__.r(__webpack_exports__);
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _actions_github__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(2835);
 /* harmony import */ var _actions_github__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(_actions_github__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var date_fns__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(8075);
-/* harmony import */ var date_fns__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__nccwpck_require__.n(date_fns__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var date_fns__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(8075);
+/* harmony import */ var date_fns__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__nccwpck_require__.n(date_fns__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var date_fns_tz__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(4619);
+/* harmony import */ var date_fns_tz__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__nccwpck_require__.n(date_fns_tz__WEBPACK_IMPORTED_MODULE_2__);
+
 
 
 
 
 function currentTimestamp(timeZone) {
-  const now = new Date();
+  const now = (0,date_fns_tz__WEBPACK_IMPORTED_MODULE_2__.utcToZonedTime)(new Date(), timeZone);
 
-  return (0,date_fns__WEBPACK_IMPORTED_MODULE_2__.format)(now, "yyMMddHHm", {
+  return (0,date_fns__WEBPACK_IMPORTED_MODULE_3__.format)(now, "yyMMddHHm", {
     timeZone: timeZone,
   });
 }
@@ -31560,12 +31571,8 @@ function currentTimestamp(timeZone) {
 try {
   const timezone = (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)("timezone");
   console.log(`Timezone: ${timezone}`);
-  const time = new Date().toTimeString();
-  (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput)("build-number", currentTimestamp(timezone));
 
-  // Get the JSON webhook payload for the event that triggered the workflow
-  const payload = JSON.stringify(_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload, undefined, 2);
-  console.log(`The event payload: ${payload}`);
+  (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput)("build-number", currentTimestamp(timezone));
 } catch (error) {
   (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed)(error.message);
 }

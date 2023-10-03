@@ -1,0 +1,21 @@
+on:
+  workflow_dispatch:
+    inputs:
+      timezone:
+        description: Time Zone
+        required: true
+        default: Asia/Kathmandu
+
+jobs:
+  gen-build-number:
+    runs-on: ubuntu-latest
+    name: Generate Build Number
+    steps:
+      - name: Generate
+        id: generate
+        uses: AcmeSoftwareLLC/app-build-number@main
+        with:
+          timezone: ${{ github.event.inputs.timezone }}
+
+      - name: Display the generated build number
+        run: echo "Build Number > ${{ steps.generate.outputs.build-number }}"
